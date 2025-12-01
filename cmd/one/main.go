@@ -15,15 +15,53 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("part one: %d\n", partOne(input))
+	fmt.Printf("part two: %d\n", partTwo(input))
 }
 
-func partOne(turns []int) int {
+func partTwo(turns []int) int {
 	var (
 		pos   = 50
 		zeros = 0
 	)
 	for _, t := range turns {
-		pos = (pos + t) % 100
+		// lol this is silly
+		s := 1
+		if t < 0 {
+			s = -1
+		}
+		if t < 0 {
+			t = -t
+		}
+		for range t {
+			pos += s
+			if pos == 0 {
+				zeros++
+			}
+			switch pos {
+			case -1:
+				pos = 99
+			case 100:
+				pos = 0
+				zeros++
+			}
+		}
+	}
+	return zeros
+}
+
+func partOne(turns []int) int {
+	clampMod := func(i int) int {
+		for i < 0 {
+			i += 100
+		}
+		return i % 100
+	}
+	var (
+		pos   = 50
+		zeros = 0
+	)
+	for _, t := range turns {
+		pos = clampMod(pos + t)
 		if pos == 0 {
 			zeros++
 		}
