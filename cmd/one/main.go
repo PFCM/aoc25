@@ -4,6 +4,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"strconv"
@@ -11,7 +12,7 @@ import (
 )
 
 func main() {
-	input, err := read()
+	input, err := read(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,11 +71,11 @@ func partOne(turns []int) int {
 	return zeros
 }
 
-// read reads the input from stdin, as a list of integers: right rotations are
-// positive, left negative.
-func read() ([]int, error) {
+// read reads the input from the provided reader, as a list of integers: right
+// rotations are positive, left negative.
+func read(r io.Reader) ([]int, error) {
 	var (
-		scan    = bufio.NewScanner(os.Stdin)
+		scan    = bufio.NewScanner(r)
 		results []int
 	)
 	for scan.Scan() {
