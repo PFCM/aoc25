@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 func main() {
@@ -14,8 +15,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("part one: %d\n", partOne(input))
-	fmt.Printf("part two: %d\n", partTwo(input))
+	timing("one", partOne, input)
+	timing("two", partTwo, input)
 }
 
 func partTwo(turns []int) int {
@@ -24,7 +25,7 @@ func partTwo(turns []int) int {
 		zeros = 0
 	)
 	for _, t := range turns {
-		// lol this is silly
+		// lol
 		s := 1
 		if t < 0 {
 			s = -1
@@ -96,4 +97,10 @@ func read() ([]int, error) {
 		return nil, err
 	}
 	return results, nil
+}
+
+func timing(part string, f func([]int) int, input []int) {
+	t0 := time.Now()
+	result := f(input)
+	fmt.Printf("Part %s: %d (%v)\n", part, result, time.Since(t0))
 }
