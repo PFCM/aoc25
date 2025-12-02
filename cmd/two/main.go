@@ -8,7 +8,10 @@ import (
 	"iter"
 	"log"
 	"os"
+	"slices"
 	"strconv"
+
+	"github.com/pfcm/it"
 )
 
 func main() {
@@ -17,6 +20,7 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Part one: %d\n", partOne(ranges))
+	fmt.Printf("Part two: %d\n", partTwo(ranges))
 }
 
 func partOne(ranges []Range) uint64 {
@@ -37,11 +41,38 @@ func partOne(ranges []Range) uint64 {
 	return sum
 }
 
+func partTwo(ranges []Range) uint64 {
+	valid := func(b []byte) bool {
+		for d := 2; len(b)/d > 0; d++ {
+			if len(b)%d != 0 {
+				continue
+			}
+			var (
+				n   = len(b) / d
+				seq = b[:n]
+			)
+			if it.All(it.Map(it.Batch(slices.Values(b), n), func(s []byte) bool {
+				return bytes.Equal(s, seq)
+			})) {
+				return false
+			}
+		}
+		return true
+	}
+	sum := uint64(0)
+	for num, i := range iterRanges(ranges) {
+		if !valid(num) {
+			sum += i
+		}
+	}
+	return sum
+}
+
 func iterRanges(ranges []Range) iter.Seq2[[]byte, uint64] {
 	return func(yield func([]byte, uint64) bool) {
 		var scratch []byte
 		for _, r := range ranges {
-			for i := r.a; i < r.b; i++ {
+			for i := r.a; i <= r.b; i++ {
 				scratch = strconv.AppendUint(scratch[:0], i, 10)
 				if !yield(scratch, i) {
 					return
