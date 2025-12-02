@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"iter"
 	"log"
 	"os"
 	"strconv"
@@ -27,19 +28,27 @@ func partOne(ranges []Range) uint64 {
 		n := len(b) / 2
 		return !bytes.Equal(b[:n], b[n:])
 	}
-	var (
-		sum     uint64 = 0
-		scratch []byte
-	)
-	for _, r := range ranges {
-		for i := r.a; i <= r.b; i++ {
-			scratch = strconv.AppendUint(scratch[:0], i, 10)
-			if !valid(scratch) {
-				sum += i
-			}
+	sum := uint64(0)
+	for num, i := range iterRanges(ranges) {
+		if !valid(num) {
+			sum += i
 		}
 	}
 	return sum
+}
+
+func iterRanges(ranges []Range) iter.Seq2[[]byte, uint64] {
+	return func(yield func([]byte, uint64) bool) {
+		var scratch []byte
+		for _, r := range ranges {
+			for i := r.a; i < r.b; i++ {
+				scratch = strconv.AppendUint(scratch[:0], i, 10)
+				if !yield(scratch, i) {
+					return
+				}
+			}
+		}
+	}
 }
 
 type Range struct {
