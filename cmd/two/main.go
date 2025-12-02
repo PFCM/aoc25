@@ -19,8 +19,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Part one: %d\n", partOne(ranges))
-	fmt.Printf("Part two: %d\n", partTwo(ranges))
+	timing := func(part string, f func([]Range) uint64) {
+		t0 := time.Now()
+		result := f(ranges)
+		fmt.Printf("Part %s: %d (%v)\n", part, result, time.Since(t0))
+	}
+	timing("one", partOne)
+	timing("two", partTwo)
 }
 
 func partOne(ranges []Range) uint64 {
