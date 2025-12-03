@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math"
 	"os"
 )
 
@@ -15,6 +16,42 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Part one: %d\n", partOne(banks))
+	fmt.Printf("Part two: %d\n", partTwo(banks))
+}
+
+func partTwo(banks [][]uint8) uint64 {
+	var (
+		sum = uint64(0)
+		tmp [12]uint8
+	)
+	for _, bank := range banks {
+		// Same as below, we just have to do it twelve times instead of
+		// two.
+		start := 0
+		for i := range 12 {
+			var (
+				end      = len(bank) - 11 + i // one after last available digit
+				max      uint8
+				maxIndex = start
+			)
+			for j := start; j < end; j++ {
+				b := bank[j]
+				if b > max {
+					max = b
+					maxIndex = j
+				}
+			}
+			tmp[i] = max
+			start = maxIndex + 1
+		}
+		inc := uint64(0)
+		for i, b := range tmp {
+			r := uint64(math.Pow10(11 - i))
+			inc += uint64(b) * r
+		}
+		sum += inc
+	}
+	return sum
 }
 
 func partOne(banks [][]uint8) int {
