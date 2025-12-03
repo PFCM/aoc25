@@ -3,11 +3,12 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"log"
 	"math"
 	"os"
+
+	"github.com/pfcm/aoc25"
 )
 
 func main() {
@@ -15,8 +16,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Part one: %d\n", partOne(banks))
-	fmt.Printf("Part two: %d\n", partTwo(banks))
+	aoc25.PrintTiming("Part one", func() int { return partOne(banks) })
+	aoc25.PrintTiming("Part two", func() uint64 { return partTwo(banks) })
 }
 
 func partTwo(banks [][]uint8) uint64 {

@@ -8,7 +8,8 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"time"
+
+	"github.com/pfcm/aoc25"
 )
 
 func main() {
@@ -16,8 +17,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	timing("one", partOne, input)
-	timing("two", partTwo, input)
+	aoc25.PrintTiming("Part one", func() int { return partOne(input) })
+	aoc25.PrintTiming("Part two", func() int { return partTwo(input) })
 }
 
 func partTwo(turns []int) int {
@@ -98,10 +99,4 @@ func read(r io.Reader) ([]int, error) {
 		return nil, err
 	}
 	return results, nil
-}
-
-func timing(part string, f func([]int) int, input []int) {
-	t0 := time.Now()
-	result := f(input)
-	fmt.Printf("Part %s: %d (%v)\n", part, result, time.Since(t0))
 }

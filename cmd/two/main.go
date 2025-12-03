@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/pfcm/aoc25"
 	"github.com/pfcm/it"
 )
 
@@ -19,13 +20,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	timing := func(part string, f func([]Range) uint64) {
-		t0 := time.Now()
-		result := f(ranges)
-		fmt.Printf("Part %s: %d (%v)\n", part, result, time.Since(t0))
-	}
-	timing("one", partOne)
-	timing("two", partTwo)
+	aoc25.PrintTiming("Part one", func() uint64 { return partOne(ranges) })
+	aoc25.PrintTiming("Part two", func() uint64 { return partTwo(ranges) })
 }
 
 func partOne(ranges []Range) uint64 {
