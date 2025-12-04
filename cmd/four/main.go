@@ -17,10 +17,42 @@ func main() {
 		log.Fatal(err)
 	}
 	aoc25.PrintTiming("Part one", func() int { return partOne(cells) })
+	aoc25.PrintTiming("Part two", func() int { return partTwo(cells) })
 }
 
 func partTwo(cells [][]bool) int {
-	return 0
+	cpy := func(dest, src [][]bool) {
+		if len(dest) != len(src) {
+			panic("they are different")
+		}
+		for i := range dest {
+			copy(dest[i], src[i])
+		}
+	}
+	next := make([][]bool, len(cells))
+	for i := range cells {
+		next[i] = make([]bool, len(cells[i]))
+	}
+	cpy(next, cells)
+	var (
+		total int
+		round = 1
+	)
+	for round != 0 {
+		round = 0
+
+		for r, row := range cells {
+			for c, cell := range row {
+				if cell && accessible(cells, r, c) {
+					round++
+					next[r][c] = false
+				}
+			}
+		}
+		cpy(cells, next)
+		total += round
+	}
+	return total
 }
 
 func partOne(cells [][]bool) int {
