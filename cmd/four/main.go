@@ -3,21 +3,57 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"io"
 	"iter"
 	"log"
 	"os"
+	"runtime/pprof"
 
 	"github.com/pfcm/aoc25"
 )
 
+var (
+	profileFlag = flag.String("profile", "", "`path` to write profiles for part two")
+)
+
 func main() {
+	flag.Parse()
+
 	cells, err := read(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
 	aoc25.PrintTiming("Part one", func() int { return partOne(cells) })
+
+	if *profileFlag != "" {
+		finish, err := startProfiles(*profileFlag)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer func() {
+			if err := finish(); err != nil {
+				log.Fatal(err)
+			}
+		}()
+	}
 	aoc25.PrintTiming("Part two", func() int { return partTwo(cells) })
+}
+
+func startProfiles(path string) (func() error, error) {
+	// TODO: memory profiles would be cool
+	f, err := os.Create(path)
+	if err != nil {
+		return nil, err
+	}
+	if err := pprof.StartCPUProfile(f); err != nil {
+		f.Close()
+		return nil, err
+	}
+	return func() error {
+		pprof.StopCPUProfile()
+		return f.Close()
+	}, nil
 }
 
 func partTwo(cells [][]bool) int {
