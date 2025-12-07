@@ -18,7 +18,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Part one: %d\n", partOne(grid))
+	aoc25.PrintTiming("Part one", func() int { return partOne(grid) })
 	aoc25.PrintTiming("Part two", func() int { return partTwo(grid) })
 }
 
@@ -38,7 +38,7 @@ func partOne(grid [][]Cell) int {
 
 	grid[0][start] = Ray
 
-	printGrid(grid)
+	// printGrid(grid)
 
 	splits := 0
 	for i, row := range grid[:len(grid)-1] {
@@ -71,7 +71,7 @@ func partOne(grid [][]Cell) int {
 			default:
 			}
 		}
-		printGrid(grid)
+		// printGrid(grid)
 	}
 	return splits
 }
