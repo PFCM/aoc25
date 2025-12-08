@@ -108,7 +108,7 @@ func partOne(vs []aoc25.IntVector[int], joins int) int {
 	return product
 }
 
-func partTwo(vs []aoc25.IntVector[int], joins int) int {
+func partTwo(vs []aoc25.IntVector[int]) int {
 	// TODO: factor out the common bits :(
 	distances := make([]float64, len(vs)*len(vs))
 	index := func(i, j int) int {
@@ -161,11 +161,17 @@ func partTwo(vs []aoc25.IntVector[int], joins int) int {
 		n.parent = n
 		sets[v] = n
 	}
-
-	// This is where we diverge from part 1: just keep joining
-	// until all of the sets are the same.
-
-	return 0
+	// This is where we diverge from part 1: just keep joining the
+	// closest ones together until they're all in the same set.
+	for _, i := range indexes {
+		x, y := fromIndex(i)
+		v1, v2 := vs[x], vs[y]
+		u := sets[v1].Union(sets[v2])
+		if u.size == len(vs) {
+			return v1.X * v2.X
+		}
+	}
+	panic("oh no")
 }
 
 type ufNode struct {
@@ -181,17 +187,18 @@ func (u *ufNode) Find() *ufNode {
 	return u
 }
 
-func (u *ufNode) Union(v *ufNode) {
+func (u *ufNode) Union(v *ufNode) *ufNode {
 	u = u.Find()
 	v = v.Find()
 	if u == v {
-		return
+		return u
 	}
 	if u.size < v.size {
 		u, v = v, u
 	}
 	v.parent = u
 	u.size += v.size
+	return u
 }
 
 func read(r io.Reader) ([]aoc25.IntVector[int], error) {
