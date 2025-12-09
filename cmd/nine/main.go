@@ -39,6 +39,15 @@ func partOne(points []point) int64 {
 	return largest
 }
 
+/*
+ 0123456789
+0..........
+1.###..####
+2.#.#..#..#
+3.#.####..#
+4.#########
+*/
+
 func partTwo(points []point) int64 {
 	inShape := func(p point) bool {
 		// tests if the point is in the shape, using a crossing number
@@ -47,33 +56,46 @@ func partTwo(points []point) int64 {
 		// We can be a bit cheeky though because it's all right angles.
 		// The idea here is we're projecting a horizontal ray to the right
 		// of p, and counting the number of times it crosses an edge.
+		printf := func(msg string, args ...any) {
+			if p == (point{6, 1}) {
+				fmt.Printf(msg, args...)
+			}
+		}
 		cn := 0
 		for i := range points {
 			start, end := points[i], points[(i+1)%len(points)]
+			printf("===%v %v\n", start, end)
 			if p.y == start.y && p.y == end.y {
 				// both straight horizontal lines
-				if p.x < start.x {
+				if p.x <= start.x {
+					printf("  h start\n")
 					cn++
 				}
 				if p.x < end.x {
+					printf("  h end\n")
 					cn++
 				}
 				continue
 			}
-			if (p.y >= start.y && p.y <= end.y) || (p.y >= end.y && p.y <= start.y) {
+			if (p.y >= start.y && p.y < end.y) || (p.y > end.y && p.y <= start.y) {
 				// By construction, start.x and end.x must be the
 				// same, and the intersection with the ray is at
 				// (p.y, start.x). So all we need to know is if
 				// p is to the left of the line.
-				if p.x < start.x {
+				if p.x <= start.x {
+					printf("  the other one\n")
 					cn++
 				}
 			}
 		}
+		printf("   cn=%d\n", cn)
 		return (cn % 2) == 1
 	}
 	var rp [4]point
-	contained := func(p, q point) bool {
+	contained := func(p, q point) (result bool) {
+		defer func() {
+			fmt.Println(p, q, result)
+		}()
 		// Returns true iff the rectangle defined by p and q is entirely
 		// contained with the shape described by lines.
 		minX, minY := min(p.x, q.x), min(p.y, q.y)
@@ -99,8 +121,12 @@ func partTwo(points []point) int64 {
 		// the shape, but even that doesn't seem like it'd be great.
 		for i, start := range rp {
 			end := rp[(i+1)%4]
-			for p := range iterLine(start, end) {
-				if !inShape(p) {
+			for v := range iterLine(start, end) {
+				b := inShape(v)
+				if p == (point{6, 1}) && q == (point{9, 4}) {
+					fmt.Println(v, b)
+				}
+				if !b {
 					return false
 				}
 			}
@@ -110,7 +136,7 @@ func partTwo(points []point) int64 {
 
 	checked := int64(0)
 	total := len(points) * len(points) / 2
-	workers := runtime.GOMAXPROCS(0)
+	workers := runtime.GOMAXPROCS(1)
 	results := make([][]int64, workers)
 	ixChan := make(chan int)
 	var g sync.WaitGroup
