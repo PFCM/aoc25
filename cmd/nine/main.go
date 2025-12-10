@@ -8,11 +8,8 @@ import (
 	"iter"
 	"log"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
-	"sync"
-	"sync/atomic"
 
 	"github.com/pfcm/aoc25"
 )
@@ -49,131 +46,65 @@ func partOne(points []point) int64 {
 */
 
 func partTwo(points []point) int64 {
-	inShape := func(p point) bool {
-		// tests if the point is in the shape, using a crossing number
-		// algorithm like those described in
-		// https://web.archive.org/web/20130126163405/http://geomalgorithms.com/a03-_inclusion.html
-		// We can be a bit cheeky though because it's all right angles.
-		// The idea here is we're projecting a horizontal ray to the right
-		// of p, and counting the number of times it crosses an edge.
-		printf := func(msg string, args ...any) {
-			if p == (point{6, 1}) {
-				fmt.Printf(msg, args...)
-			}
-		}
-		cn := 0
-		for i := range points {
-			start, end := points[i], points[(i+1)%len(points)]
-			printf("===%v %v\n", start, end)
-			if p.y == start.y && p.y == end.y {
-				// both straight horizontal lines
-				if p.x <= start.x {
-					printf("  h start\n")
-					cn++
-				}
-				if p.x < end.x {
-					printf("  h end\n")
-					cn++
-				}
-				continue
-			}
-			if (p.y >= start.y && p.y < end.y) || (p.y > end.y && p.y <= start.y) {
-				// By construction, start.x and end.x must be the
-				// same, and the intersection with the ray is at
-				// (p.y, start.x). So all we need to know is if
-				// p is to the left of the line.
-				if p.x <= start.x {
-					printf("  the other one\n")
-					cn++
-				}
-			}
-		}
-		printf("   cn=%d\n", cn)
-		return (cn % 2) == 1
-	}
-	var rp [4]point
 	contained := func(p, q point) (result bool) {
-		defer func() {
-			fmt.Println(p, q, result)
-		}()
-		// Returns true iff the rectangle defined by p and q is entirely
-		// contained with the shape described by lines.
 		minX, minY := min(p.x, q.x), min(p.y, q.y)
 		maxX, maxY := max(p.x, q.x), max(p.y, q.y)
-		rp[0] = point{x: minX, y: minY} // top left
-		rp[1] = point{x: maxX, y: minY} // top right
-		rp[2] = point{x: maxX, y: maxY} // bottom right
-		rp[3] = point{x: minX, y: maxY} // bottom left
-		// To avoid getting a situation like
-		// ########
-		// .......#
-		// ....####
-		// ....#...
-		// ....#...
-		// ....####
-		// .......#
-		// .......#
-		// erroneously allowing a rectangle that covers the cutout,
-		// check every point along the perimeter.
-		// Which is a lot of points.
-		// There's probably a better way involving breaking each line
-		// segment into chunks according to where it intersects
-		// the shape, but even that doesn't seem like it'd be great.
-		for i, start := range rp {
-			end := rp[(i+1)%4]
-			for v := range iterLine(start, end) {
-				b := inShape(v)
-				if p == (point{6, 1}) && q == (point{9, 4}) {
-					fmt.Println(v, b)
+		// If there are any points in the shape that are inside the
+		// rectangle that are not on the edge, then the rectangle _must_
+		// go outside the shape.
+		for _, p := range points {
+			if p.x <= minX || p.x >= maxX {
+				continue
+			}
+			if p.y <= minY || p.y >= maxY {
+				continue
+			}
+			return false
+		}
+		// This is necessary but not sufficient: there could also be
+		// lines in the shape that entirely cross the rectangle, which
+		// would also mean no dice.
+		for i := range points {
+			start, end := points[i], points[(i+1)%len(points)]
+			// TODO: these conditions seem unreasonably complicated
+			if start.x == end.x {
+				// vertical line
+				if start.x <= minX || start.x >= maxX {
+					continue
 				}
-				if !b {
+				start.y, end.y = min(start.y, end.y), max(start.y, end.y)
+				if start.y <= minY && end.y >= maxY {
+					// crosses the rectangle
 					return false
 				}
+				continue
+			} else if start.y == end.y {
+				// horizontal line
+				if start.y <= minY || start.y >= maxY {
+					continue
+				}
+				start.x, end.x = min(start.x, end.x), max(start.x, end.x)
+				if start.x <= minX && end.x >= maxX {
+					return false
+				}
+				continue
+			} else {
+				panic("impossible?")
 			}
 		}
+		// Maybe this is enough?
 		return true
 	}
 
-	checked := int64(0)
-	total := len(points) * len(points) / 2
-	workers := runtime.GOMAXPROCS(1)
-	results := make([][]int64, workers)
-	ixChan := make(chan int)
-	var g sync.WaitGroup
-	for i := range workers {
-		go func() {
-			defer g.Done()
-			for j := range ixChan {
-				p := points[j]
-				for _, q := range points[j+1:] {
-					if contained(p, q) {
-						results[i] = append(results[i], area(p, q))
-					}
-					if c := atomic.AddInt64(&checked, 1); c%1000 == 0 {
-
-						fmt.Printf("\r%d/%d", checked, total)
-					}
-				}
-			}
-		}()
-		g.Add(1)
-	}
-	for i := range points {
-		ixChan <- i
-	}
-	close(ixChan)
-	g.Wait()
-	fmt.Println()
-
 	largest := int64(0)
-	for _, rs := range results {
-		for _, r := range rs {
-			if r > largest {
-				largest = r
+	for i, p := range points {
+		for _, q := range points[i+1:] {
+			if a := area(p, q); a > largest && contained(p, q) {
+				largest = a
 			}
+
 		}
 	}
-
 	return largest
 }
 
