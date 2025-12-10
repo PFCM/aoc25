@@ -5,25 +5,33 @@ import (
 	"bufio"
 	"bytes"
 	"container/heap"
+	"flag"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"slices"
 	"strconv"
+	"sync"
+	"sync/atomic"
+
+	"github.com/pfcm/it"
 
 	"github.com/pfcm/aoc25"
-	"github.com/pfcm/it"
 )
 
+var workersFlag = flag.Int("workers", 10, "parallelism for part 2")
+
 func main() {
+	flag.Parse()
+
 	machines, err := read(os.Stdin)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	aoc25.PrintTiming("Part one", func() int { return partOne(machines) })
-	aoc25.PrintTiming("Part two", func() int { return partTwo(machines) })
+	aoc25.PrintTiming("Part two", func() int32 { return partTwo(machines) })
 }
 
 func partOne(ms []machine) int {
@@ -34,13 +42,25 @@ func partOne(ms []machine) int {
 	return n
 }
 
-func partTwo(ms []machine) int {
-	n := 0
-	for i, m := range ms {
-		n += m.setJoltages()
-		fmt.Printf("%d/%d done\n", i+1, len(ms))
+func partTwo(ms []machine) int32 {
+	var (
+		n     atomic.Int32
+		done  atomic.Int32
+		g     sync.WaitGroup
+		batch = max(1, len(ms)/(*workersFlag))
+	)
+	for b := range it.Batch(slices.Values(ms), batch) {
+		b := slices.Clone(b)
+		g.Go(func() {
+			for _, m := range b {
+				v := m.setJoltages()
+				n.Add(int32(v))
+				fmt.Printf("%d/%d done\n", done.Add(1), len(ms))
+			}
+		})
 	}
-	return n
+	g.Wait()
+	return n.Load()
 }
 
 func read(r io.Reader) ([]machine, error) {
@@ -100,7 +120,6 @@ func fromBytes(b []byte) (machine, error) {
 		buttons:      buttons,
 		joltages:     js,
 	}
-	fmt.Println(m)
 	return m, nil
 }
 
@@ -172,16 +191,18 @@ func (m machine) setJoltages() int {
 		return float64(d2)
 	}
 	// lol
-	visited := make(map[string]bool)
+	visited := make(map[string]int)
 	todo := jheap{{length: 0, joltages: make([]int, len(m.joltages))}}
 	for range 1000000000 {
 		s := heap.Pop(&todo).(jnode)
 
 		key := fmt.Sprint(s.joltages)
-		if visited[key] {
+		if n, ok := visited[key]; ok && n <= s.length {
+			// We've previous found a way to this permutation that
+			// was better (or the same, either way).
 			continue
 		}
-		visited[key] = true
+		visited[key] = s.length
 		if match(s.joltages) {
 			return s.length
 		}
