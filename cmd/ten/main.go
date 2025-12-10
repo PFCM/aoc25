@@ -42,6 +42,15 @@ func partOne(ms []machine) int {
 	return n
 }
 
+// TODO: the right thing to do here is ditch the graph stuff and treat
+// this as a system of linear equations Bx = j where B has each button
+// as a column and x is a column vector where each element is the number
+// of times a button is pressed (and j is the joltages). We then solve
+// trying to minimise L1 norm of x.
+// Look into doing this with LU decomposition, or something along those
+// lines (typically used for least squares, maybe can adjust?)
+// Otherwise it's pretty much integer linear programming, but that's
+// NP?
 func partTwo(ms []machine) int32 {
 	var (
 		n     atomic.Int32
